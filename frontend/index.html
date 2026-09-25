@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="/static/favicon.svg">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Document Authentication | Research Prototype (BCSE323L)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-shield">🛡️</div>
+      <div class="brand-text">
+        <h1>SecureDoc<span>Auth</span></h1>
+        <p class="subtitle">Hybrid QR + DWT-SVD Watermark + Blind Copy Detection + Web-PKI + Edge AI</p>
+      </div>
+    </div>
+    <div class="nav-status">
+      <span class="badge badge-pulse" id="sys-status-badge">● System Online</span>
+      <span class="badge badge-outline">BCSE323L Fall 2026-2027</span>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="studio">🎓 Document Studio</button>
+    <button class="tab-btn" data-tab="verify">🔍 Verification Center</button>
+    <button class="tab-btn" data-tab="attack">⚡ Attack Simulator</button>
+    <button class="tab-btn" data-tab="pki">🏛️ Web-PKI Registry</button>
+    <button class="tab-btn" data-tab="experiments">📊 Ablation & Research</button>
+  </nav>
+
+  <main class="main-container">
+
+    <!-- TAB 1: DOCUMENT STUDIO -->
+    <section id="tab-studio" class="tab-pane active">
+      <div class="two-column-layout">
+        <!-- Controls Column -->
+        <div class="card card-panel">
+          <div class="card-header">
+            <h2>Issuance & Cryptographic Sealing Studio</h2>
+            <p>Generate authentic credentials bound to Ed25519 keys, CBOR-ZLIB QR, and invisible DWT-SVD watermarks.</p>
+          </div>
+          <form id="doc-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Recipient Full Name</label>
+                <input type="text" id="inp-name" value="Bishal Paul" required>
+              </div>
+              <div class="form-group">
+                <label>Registration Number / ID</label>
+                <input type="text" id="inp-reg" value="23BCI0224" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Degree / Program</label>
+                <input type="text" id="inp-degree" value="B.Tech Computer Science & Engineering" required>
+              </div>
+              <div class="form-group">
+                <label>Grade / Classification</label>
+                <input type="text" id="inp-grade" value="Distinction (9.4 CGPA)" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Issuer Institutional Domain</label>
+                <input type="text" id="inp-issuer" value="vit.ac.in" required>
+              </div>
+              <div class="form-group">
+                <label>Document Template</label>
+                <select id="inp-template">
+                  <option value="certificate">Merit Degree / Certificate</option>
+                  <option value="id_card">Official Student ID Badge</option>
+                  <option value="transcript">Semester Grade Transcript</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Document Script (Gap 5)</label>
+                <select id="inp-script">
+                  <option value="latin">English (Latin Script)</option>
+                  <option value="devanagari">Hindi (देवनागरी / Devanagari Script)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Institutional Header</label>
+                <input type="text" id="inp-inst" value="VELLORE INSTITUTE OF TECHNOLOGY">
+              </div>
+            </div>
+
+            <div class="security-features-box">
+              <h4>Active Security Encodings:</h4>
+              <ul>
+                <li>✓ Ed25519 Asymmetric Digital Signature (256-bit)</li>
+                <li>✓ Deterministic Canonical JSON $\rightarrow$ SHA-256 Digest</li>
+                <li>✓ High-Density CBOR Serialized + ZLIB Compressed QR Payload</li>
+                <li>✓ DWT + SVD Multi-Resolution Invisible Watermark (Y Channel)</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="btn-generate">
+              <span class="btn-icon">🔏</span> Generate & Cryptographically Seal Document
+            </button>
+          </form>
+        </div>
+
+        <!-- Preview Column -->
+        <div class="card card-panel preview-panel">
+          <div class="card-header flex-between">
+            <h2>Live Document Output</h2>
+            <div id="gen-meta-badges"></div>
+          </div>
+          <div class="doc-viewport" id="doc-preview-container">
+            <div class="empty-state">
+              <div class="empty-icon">📄</div>
+              <p>Click "Generate & Seal" to produce an authentic high-resolution watermarked document.</p>
+            </div>
+          </div>
+          <div class="doc-actions" id="doc-actions-bar" style="display:none;">
+            <button class="btn btn-secondary" id="btn-send-to-verify">Send to Verification Center ➔</button>
+            <button class="btn btn-secondary" id="btn-send-to-attack">Send to Attack Simulator ➔</button>
+            <a class="btn btn-outline" id="btn-download-doc" download="authenticated_certificate.png">Download PNG</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: VERIFICATION CENTER -->
+    <section id="tab-verify" class="tab-pane">
+      <div class="verify-grid">
+        <!-- Input / Upload Column -->
+        <div class="card card-panel">
+          <div class="card-header">
+            <h2>Document Verification Engine</h2>
+            <p>Runs the 8-stage verification pipeline across cryptographic, physical, and AI layers.</p>
+          </div>
+
+          <div class="drop-zone" id="drop-zone">
+            <div class="drop-zone-content">
+              <div class="drop-icon">📤</div>
+              <p><strong>Drag & drop document image here</strong></p>
+              <p class="drop-sub">or browse from your system (PNG, JPG, TIFF)</p>
+              <input type="file" id="file-input" accept="image/*">
+            </div>
+          </div>
+
+          <div class="preview-mini" id="verify-preview-wrap" style="display:none;">
+            <img id="verify-preview-img" src="" alt="To Verify">
+            <div class="mini-meta">
+              <span id="verify-file-name">filename.png</span>
+              <button class="btn btn-small btn-outline" id="btn-clear-verify">Clear</button>
+            </div>
+          </div>
+
+          <div class="quick-samples">
+            <label>Load Demonstration Sample:</label>
+            <div class="sample-btn-group">
+              <button class="btn btn-small btn-secondary" id="btn-load-genuine">Genuine Original</button>
+              <button class="btn btn-small btn-secondary" id="btn-load-reprint">Simulated Reprint</button>
+              <button class="btn btn-small btn-secondary" id="btn-load-tamper">Tampered Grade</button>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-block" id="btn-run-verify">
+            <span class="btn-icon">⚡</span> Execute Full 8-Stage Authentication
+          </button>
+        </div>
+
+        <!-- Verification Results Dashboard -->
+        <div class="card card-panel results-panel">
+          <div class="card-header flex-between">
+            <h2>Authentication Verdict</h2>
+            <div id="verdict-tag" class="verdict-tag verdict-idle">AWAITING INPUT</div>
+          </div>
+
+          <div id="verdict-summary-box" class="summary-box">
+            Upload or select a document to inspect multi-layer cryptographic and physical security signals.
+          </div>
+
+          <div class="total-latency" id="latency-label"></div>
+
+          <!-- 8 Security Layers Grid -->
+          <div class="layers-grid" id="layers-container">
+            <!-- QR Layer -->
+            <div class="layer-card" id="card-qr">
+              <div class="layer-header">
+                <span class="layer-num">1</span>
+                <h4>Hybrid QR Code</h4>
+                <span class="layer-badge" id="badge-qr">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-qr">Detects & decodes compressed CBOR-ZLIB payload.</p>
+            </div>
+
+            <!-- Web-PKI Layer -->
+            <div class="layer-card" id="card-pki">
+              <div class="layer-header">
+                <span class="layer-num">2</span>
+                <h4>Web-PKI Domain Check</h4>
+                <span class="layer-badge" id="badge-pki">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-pki">Validates institutional domain & key status.</p>
+            </div>
+
+            <!-- Signature Layer -->
+            <div class="layer-card" id="card-sig">
+              <div class="layer-header">
+                <span class="layer-num">3</span>
+                <h4>Ed25519 Signature</h4>
+                <span class="layer-badge" id="badge-sig">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-sig">Cryptographic asymmetric signature validation.</p>
+            </div>
+
+            <!-- Hash Integrity Layer -->
+            <div class="layer-card" id="card-hash">
+              <div class="layer-header">
+                <span class="layer-num">4</span>
+                <h4>SHA-256 Hash Match</h4>
+                <span class="layer-badge" id="badge-hash">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-hash">Compares canonical content digest against seal.</p>
+            </div>
+
+            <!-- Watermark Layer -->
+            <div class="layer-card" id="card-wm">
+              <div class="layer-header">
+                <span class="layer-num">5</span>
+                <h4>DWT-SVD Watermark</h4>
+                <span class="layer-badge" id="badge-wm">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-wm">Extracts singular value watermark; measures NC & BER.</p>
+            </div>
+
+            <!-- Component A Layer -->
+            <div class="layer-card" id="card-copy">
+              <div class="layer-header">
+                <span class="layer-num">6</span>
+                <h4>Component A: Copy Detection</h4>
+                <span class="layer-badge" id="badge-copy">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-copy">GLCM microtexture and high-frequency DCT analysis.</p>
+            </div>
+
+            <!-- Edge AI Layer -->
+            <div class="layer-card" id="card-ai">
+              <div class="layer-header">
+                <span class="layer-num">7</span>
+                <h4>Component C: Edge AI Signal</h4>
+                <span class="layer-badge" id="badge-ai">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-ai">Secondary image classifier for genuine vs reprint vs tamper.</p>
+            </div>
+
+            <!-- Semantic Typosquatting Layer -->
+            <div class="layer-card" id="card-typo">
+              <div class="layer-header">
+                <span class="layer-num">8</span>
+                <h4>Homoglyph / Typosquatting</h4>
+                <span class="layer-badge" id="badge-typo">IDLE</span>
+              </div>
+              <p class="layer-desc" id="desc-typo">Detects confusable character and spoofing attacks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ATTACK SIMULATOR -->
+    <section id="tab-attack" class="tab-pane">
+      <div class="two-column-layout">
+        <div class="card card-panel">
+          <div class="card-header">
+            <h2>Multi-Vector Attack & Distortion Simulator</h2>
+            <p>Stress-test documents under realistic physical and digital attack vectors (Phase 11).</p>
+          </div>
+
+          <div class="attack-selector">
+            <label>Select Attack / Distortion Channel:</label>
+            <div class="attack-grid">
+              <button class="btn-attack active" data-attack="PRINT_SCAN">
+                <span class="atk-title">🖨️ Print-and-Scan Channel</span>
+                <span class="atk-desc">Downsampling, halftoning, color shift & sensor noise.</span>
+              </button>
+              <button class="btn-attack" data-attack="JPEG">
+                <span class="atk-title">📉 Heavy JPEG Compression</span>
+                <span class="atk-desc">Quality 25 lossy block artifacting.</span>
+              </button>
+              <button class="btn-attack" data-attack="TAMPER">
+                <span class="atk-title">✂️ Content Splicing / Forgery</span>
+                <span class="atk-desc">Alters name and grade while keeping original QR.</span>
+              </button>
+              <button class="btn-attack" data-attack="PERSPECTIVE">
+                <span class="atk-title">📱 Smartphone Tilt & Angle</span>
+                <span class="atk-desc">Perspective warp simulating hand-held phone capture.</span>
+              </button>
+              <button class="btn-attack" data-attack="LIGHTING">
+                <span class="atk-title">💡 Glare & Flashlight Reflection</span>
+                <span class="atk-desc">Uneven ambient illumination and specular glare.</span>
+              </button>
+              <button class="btn-attack" data-attack="NOISE">
+                <span class="atk-title">📶 Optical Sensor Noise</span>
+                <span class="atk-desc">Zero-mean Gaussian camera sensor noise ($\sigma = 18$).</span>
+              </button>
+              <button class="btn-attack" data-attack="BLUR">
+                <span class="atk-title">🔍 Focal / Motion Blur</span>
+                <span class="atk-desc">Gaussian smoothing simulating out-of-focus camera.</span>
+              </button>
+              <button class="btn-attack" data-attack="ROTATION">
+                <span class="atk-title">🔄 Document Skew / Rotation</span>
+                <span class="atk-desc">Physical document placement rotation ($\theta = 4.5^\circ$).</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn-warning btn-block" id="btn-execute-attack">
+            <span class="btn-icon">⚡</span> Apply Attack & Run Instant Verification
+          </button>
+        </div>
+
+        <div class="card card-panel">
+          <div class="card-header flex-between">
+            <h2>Attacked Document Visualizer</h2>
+            <div id="attack-verdict-tag" class="verdict-tag verdict-idle">AWAITING ATTACK</div>
+          </div>
+          <div class="doc-viewport" id="attack-preview-container">
+            <div class="empty-state">
+              <div class="empty-icon">🛡️</div>
+              <p>Select an attack mode and click "Apply Attack" to view distortion and verification outcome.</p>
+            </div>
+          </div>
+          <div class="attack-diagnostic-box" id="attack-diagnostics" style="display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: WEB-PKI TRUST REGISTRY -->
+    <section id="tab-pki" class="tab-pane">
+      <div class="two-column-layout">
+        <!-- Trust Registry List -->
+        <div class="card card-panel">
+          <div class="card-header flex-between">
+            <div>
+              <h2>Enrolled Institutional Trust Registry</h2>
+              <p>Component B: Official public keys, domain bindings, and revocation states.</p>
+            </div>
+            <button class="btn btn-small btn-secondary" id="btn-refresh-pki">↻ Refresh</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="pki-table">
+              <thead>
+                <tr>
+                  <th>Issuer ID</th>
+                  <th>Official Domain</th>
+                  <th>Key ID</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="pki-table-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="latency-benchmark-box" id="revocation-latency-box" style="display:none;">
+            <h4>Revocation Latency Benchmark:</h4>
+            <p id="revocation-latency-text">Key revoked instantly in <strong>0.00 ms</strong>. Subsequent verifications will reject this issuer immediately.</p>
+          </div>
+        </div>
+
+        <!-- Typosquatting / Homoglyph Inspector -->
+        <div class="card card-panel">
+          <div class="card-header">
+            <h2>Semantic Typosquatting & Homoglyph Inspector</h2>
+            <p>Test arbitrary or spoofed domains against the authoritative institutional registry.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Domain to Audit</label>
+            <input type="text" id="inp-check-domain" value="v1t.ac.in" placeholder="e.g. vlt.ac.in, vit-ac.in, iitd.ac.in">
+          </div>
+
+          <button class="btn btn-secondary" id="btn-check-domain">Audit Domain Similarity</button>
+
+          <div class="domain-audit-result" id="domain-audit-box" style="display:none;">
+            <div class="audit-metric">
+              <span>Similarity Score:</span>
+              <strong id="audit-sim-val">90.0%</strong>
+            </div>
+            <div class="audit-metric">
+              <span>Closest Trusted Domain:</span>
+              <strong id="audit-matched-val">vit.ac.in</strong>
+            </div>
+            <div class="audit-metric">
+              <span>Security Classification:</span>
+              <span id="audit-flag-val" class="badge badge-warning">TYPOSQUATTING SUSPECTED</span>
+            </div>
+            <p id="audit-note" class="audit-note"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: ABLATION & RESEARCH LAB -->
+    <section id="tab-experiments" class="tab-pane">
+      <div class="card card-panel">
+        <div class="card-header flex-between">
+          <div>
+            <h2>Scientific Benchmarking & Ablation Suite</h2>
+            <p>Automated evaluation addressing Research Gaps 1, 3, 4, 5, and 6.</p>
+          </div>
+          <div class="experiment-actions">
+            <button class="btn btn-primary btn-small" id="btn-run-ablation">Run 5-Stage Ablation Benchmark</button>
+            <button class="btn btn-secondary btn-small" id="btn-run-cross">Run Multi-Condition Matrix</button>
+          </div>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Component Ablation Comparison (Gap 4)</h3>
+            <div class="chart-box" id="ablation-chart-wrap">
+              <div class="loading-spinner">Loading benchmark plots...</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Component A Receiver Operating Characteristic (ROC)</h3>
+            <div class="chart-box" id="roc-chart-wrap">
+              <div class="loading-spinner">Loading ROC curve...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-experiments-section">
+          <h3>Live Verification Audit Trail (SQLite)</h3>
+          <div class="table-responsive">
+            <table class="data-table" id="logs-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Doc ID</th>
+                  <th>QR</th>
+                  <th>Signature</th>
+                  <th>Watermark NC</th>
+                  <th>Copy Score</th>
+                  <th>AI Class</th>
+                  <th>Final Status</th>
+                </tr>
+              </thead>
+              <tbody id="logs-table-body">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
