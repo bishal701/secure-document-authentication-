@@ -47,7 +47,6 @@ This project implements the complete research prototype specified in the **Secur
 To launch the complete application (FastAPI backend + interactive Web UI):
 
 ```bash
-cd c:\Users\bisha\Downloads\secure-document-authentication
 python run_demo.py
 ```
 
